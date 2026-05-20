@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agrotech Derivative Simulator - Malaysian Oil Palm Yield</title>
+    <!-- Tailwind CSS for sleek UI styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js for smooth data visualization -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-slate-50 font-sans text-slate-800">
+
+    <div class="max-w-5xl mx-auto p-4 md:p-8">
+        <!-- Header -->
+        <header class="mb-8 border-b border-slate-200 pb-6">
+            <span class="text-xs font-bold tracking-widest text-emerald-600 uppercase">Agrotech Bioscience Application</span>
+            <h1 class="text-3xl font-extrabold text-slate-900 mt-1">Oil Palm FFB Yield Optimization</h1>
+            <p class="text-slate-600 mt-2">Visualizing calculus applications in Malaysian agriculture via Fresh Fruit Bunch (FFB) metrics.</p>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Left Panel: Problem Statement & Formulas -->
+            <div class="space-y-6 lg:col-span-1">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                    <h2 class="text-lg font-bold text-slate-900 mb-3">The Bioscience Problem</h2>
+                    <p class="text-sm text-slate-600 leading-relaxed">
+                        Managing a Malaysian oil palm plantation requires precise intervention timing. By analyzing the yield function, agrotech managers use the first derivative <span class="font-semibold text-emerald-600">f'(x)</span> to evaluate the absolute growth acceleration or decline of FFB production.
+                    </p>
+                </div>
+
+                <div class="bg-emerald-950 text-emerald-50 p-6 rounded-2xl shadow-sm space-y-4">
+                    <h2 class="text-lg font-bold">Mathematical Model</h2>
+                    
+                    <div>
+                        <span class="block text-xs uppercase tracking-wider text-emerald-400 font-semibold">Yield Function f(x)</span>
+                        <div class="bg-emerald-900/50 p-2 rounded mt-1 font-mono text-sm border border-emerald-800">
+                            f(x) = -0.015x³ + 0.45x² - 1.2x
+                        </div>
+                        <p class="text-xs text-emerald-300 mt-1">Outputs: FFB Yield (tonnes/ha/year)</p>
+                    </div>
+
+                    <div>
+                        <span class="block text-xs uppercase tracking-wider text-emerald-400 font-semibold">Derivative f'(x)</span>
+                        <div class="bg-emerald-900/50 p-2 rounded mt-1 font-mono text-sm border border-emerald-800">
+                            f'(x) = -0.045x² + 0.9x - 1.2
+                        </div>
+                        <p class="text-xs text-emerald-300 mt-1">Outputs: Rate of change (tonnes/ha/year per year)</p>
+                    </div>
+                    
+                    <div class="text-[11px] text-emerald-400 border-t border-emerald-800 pt-3">
+                        <span class="font-semibold">Data Baseline:</span> Generalized from Malaysian Palm Oil Board (MPOB) and Foong et al. production lifespans.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel: Interactive Graph & Analysis -->
+            <div class="lg:col-span-2 space-y-6">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                    <h2 class="text-lg font-bold text-slate-900 mb-1">Interactive Yield Timeline</h2>
+                    <p class="text-xs text-slate-500 mb-4">Click anywhere directly on the line or data points to calculate the operational derivative.</p>
+                    
+                    <div class="relative w-full h-72 md:h-96">
+                        <canvas id="yieldChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Dynamic Click Result Display -->
+                <div id="resultCard" class="bg-slate-100 border border-slate-200 p-6 rounded-2xl transition-all duration-300 ease-in-out">
+                    <div id="placeholderText" class="text-center text-slate-500 text-sm py-4">
+                        💡 Click a coordinate point on the chart above to trigger the derivative calculator.
+                    </div>
+                    
+                    <div id="calcContent" class="hidden space-y-3">
+                        <div class="flex justify-between items-center border-b border-slate-200 pb-2">
+                            <h3 class="font-bold text-slate-900 text-lg">Analysis at Year <span id="resYear" class="text-emerald-600">0</span></h3>
+                            <span id="trendBadge" class="px-2.5 py-1 rounded-full text-xs font-semibold"></span>
+                        </div>
+                        
+                        <div class="grid grid-cols-2 gap-4 my-2">
+                            <div class="bg-white p-3 rounded-xl border border-slate-200/60">
+                                <span class="text-xs text-slate-500 block">Current Yield f(x)</span>
+                                <span id="resYield" class="text-xl font-bold text-slate-800">0</span> <span class="text-xs text-slate-500">t/ha/yr</span>
+                            </div>
+                            <div class="bg-white p-3 rounded-xl border border-slate-200/60">
+                                <span class="text-xs text-slate-500 block">Marginal Rate f'(x)</span>
+                                <span id="resDerivative" class="text-xl font-bold text-emerald-600">0</span> <span class="text-xs text-slate-500">t/ha/yr²</span>
+                            </div>
+                        </div>
+
+                        <div>
+                            <span class="text-xs font-semibold uppercase tracking-wider text-slate-400 block">Agrotech Interpretation</span>
+                            <p id="resExplanation" class="text-sm text-slate-700 mt-0.5 leading-relaxed bg-white p-3 rounded-xl border border-slate-200/60"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Generate realistic agrotech timeline data (Years 3 to 25)
+        const years = [];
+        const yields = [];
+        
+        for (let x = 3; x <= 25; x++) {
+            years.push(x);
+            // f(x) = -0.015x^3 + 0.45x^2 - 1.2x
+            let y = (-0.015 * Math.pow(x, 3)) + (0.45 * Math.pow(x, 2)) - (1.2 * x);
+            yields.push(parseFloat(y.toFixed(2)));
+        }
+
+        // Mathematical calculation modules
+        function getDerivative(x) {
+            // f'(x) = -0.045x^2 + 0.9x - 1.2
+            return (-0.045 * Math.pow(x, 2)) + (0.9 * x) - 1.2;
+        }
+
+        function getLaymanExplanation(x, fX, dfX) {
+            if (x >= 3 && x <= 5) {
+                return `Young Palms (Young Mature Stage). The yield is currently low at ${fX} tonnes/ha, but it is picking up momentum at a rate of +${dfX} tonnes per year. Keep dynamic fertilizer applications high.`;
+            } else if (x > 5 && x < 10) {
+                return `Prime Acceleration Phase. The plantation production velocity is surging rapidly. At this point, your yield increases by a massive ${dfX} tonnes/ha over the next year alone. Peak physiological efficiency is approaching.`;
+            } else if (x >= 10 && x <= 15) {
+                return `Peak Plateau Stage. Your trees are producing maximum outputs (~${fX} tonnes/ha). Notice that the derivative is very close to zero (${dfX}), meaning the production has leveled off. This is your optimum profit window.`;
+            } else if (x > 15 && x <= 20) {
+                return `Gradual Maturation. The trees remain highly productive, but the rate of change has flipped negative (${dfX}). Yield drops slightly each year due to canopy shading and physiological aging.`;
+            } else {
+                return `Senescent / Replanting Phase. Production drop is accelerating (losing ${Math.abs(dfX)} tonnes/ha per year). Tall trunk height also increases harvesting costs. This negative derivative indicates replanting cycles should be scheduled soon.`;
+            }
+        }
+
+        // Chart.js Canvas Setup
+        const ctx = document.getElementById('yieldChart').getContext('2d');
+        const yieldChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: years,
+                datasets: [{
+                    label: 'FFB Yield (tonnes/ha/year)',
+                    data: yields,
+                    borderColor: '#059669',
+                    backgroundColor: 'rgba(5, 150, 105, 0.05)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.3,
+                    pointBackgroundColor: '#059669',
+                    pointRadius: 5,
+                    pointHoverRadius: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    x: { 
+                        title: { display: true, text: 'Tree Age (Years After Planting)', font: { weight: 'bold' } },
+                        grid: { display: false }
+                    },
+                    y: { 
+                        title: { display: true, text: 'Yield (t/ha/year)', font: { weight: 'bold' } },
+                        min: 0,
+                        max: 35
+                    }
+                },
+                // Trigger action when users click on data nodes
+                onClick: (e, elements) => {
+                    if (elements.length > 0) {
+                        const index = elements[0].index;
+                        const selectedYear = years[index];
+                        const selectedYield = yields[index];
+                        
+                        // Execute Calculus Operations
+                        const derivativeValue = parseFloat(getDerivative(selectedYear).toFixed(3));
+                        const explanation = getLaymanExplanation(selectedYear, selectedYield, derivativeValue);
+
+                        // Update Dashboard Elements dynamically
+                        document.getElementById('placeholderText').classList.add('hidden');
+                        document.getElementById('calcContent').classList.remove('hidden');
+                        
+                        const resultCard = document.getElementById('resultCard');
+                        const trendBadge = document.getElementById('trendBadge');
+                        
+                        document.getElementById('resYear').innerText = selectedYear;
+                        document.getElementById('resYield').innerText = selectedYield;
+                        document.getElementById('resDerivative').innerText = (derivativeValue > 0 ? '+' : '') + derivativeValue;
+                        document.getElementById('resExplanation').innerText = explanation;
+
+                        // UI Badge color code logic based on derivative sign
+                        if (derivativeValue > 0.2) {
+                            resultCard.className = "bg-emerald-50 border border-emerald-200 p-6 rounded-2xl transition-all duration-300";
+                            trendBadge.innerText = "Accelerating Production";
+                            trendBadge.className = "px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800";
+                        } else if (derivativeValue <= 0.2 && derivativeValue >= -0.2) {
+                            resultCard.className = "bg-amber-50 border border-amber-200 p-6 rounded-2xl transition-all duration-300";
+                            trendBadge.innerText = "Peak Plateau / Stable";
+                            trendBadge.className = "px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800";
+                        } else {
+                            resultCard.className = "bg-rose-50 border border-rose-200 p-6 rounded-2xl transition-all duration-300";
+                            trendBadge.innerText = "Declining Production Rate";
+                            trendBadge.className = "px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-100 text-rose-800";
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
